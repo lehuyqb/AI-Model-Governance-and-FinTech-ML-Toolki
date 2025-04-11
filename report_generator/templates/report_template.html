@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Governance Report - {{ report_data.model_info.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        h2 {
+            margin-top: 30px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        h3 {
+            margin-top: 20px;
+            color: #3498db;
+        }
+        .section {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .model-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .model-info-item {
+            flex: 1;
+            min-width: 200px;
+            margin: 10px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .model-info-item h4 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        .plot-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .plot-container iframe {
+            border: none;
+            width: 100%;
+            height: 500px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .recommendation {
+            background-color: #f0f8ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+        .recommendation h4 {
+            margin-top: 0;
+        }
+        .compliance-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .compliant {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .non-compliant {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .feature-importance {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .feature-item {
+            flex: 1;
+            min-width: 150px;
+            margin: 5px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .feature-item .importance {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .bias-metrics {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .bias-metric {
+            flex: 1;
+            min-width: 200px;
+            margin: 10px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .bias-metric h4 {
+            margin-top: 0;
+        }
+        .bias-metric .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .bias-metric .interpretation {
+            font-style: italic;
+            margin-top: 10px;
+        }
+        .performance-metrics {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .performance-metric {
+            flex: 1;
+            min-width: 150px;
+            margin: 10px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .performance-metric h4 {
+            margin-top: 0;
+        }
+        .performance-metric .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>AI Model Governance Report</h1>
+    
+    <div class="section">
+        <h2>Model Information</h2>
+        <div class="model-info">
+            <div class="model-info-item">
+                <h4>Model Name</h4>
+                <p>{{ report_data.model_info.name }}</p>
+            </div>
+            <div class="model-info-item">
+                <h4>Model Version</h4>
+                <p>{{ report_data.model_info.version }}</p>
+            </div>
+            <div class="model-info-item">
+                <h4>Model Type</h4>
+                <p>{{ report_data.model_info.type }}</p>
+            </div>
+            <div class="model-info-item">
+                <h4>Report Generated</h4>
+                <p>{{ report_data.model_info.generation_date }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Model Explainability</h2>
+        
+        {% if report_data.explainability.feature_importance %}
+        <h3>Feature Importance</h3>
+        <div class="plot-container">
+            <div id="feature-importance-plot"></div>
+        </div>
+        <script>
+            var featureImportancePlot = {{ report_data.explainability.feature_importance_plot | safe }};
+            document.getElementById('feature-importance-plot').innerHTML = featureImportancePlot;
+        </script>
+        
+        <h3>Top Features</h3>
+        <div class="feature-importance">
+            {% for feature, importance in report_data.explainability.feature_importance | dictsort(by='value', reverse=true) | slice(10) %}
+            <div class="feature-item">
+                <h4>{{ feature }}</h4>
+                <p class="importance">{{ "%.4f" | format(importance) }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No feature importance data available.</p>
+        {% endif %}
+        
+        {% if report_data.explainability.has_shap_values %}
+        <h3>SHAP Values</h3>
+        <p>SHAP values are available for this model.</p>
+        {% endif %}
+        
+        {% if report_data.explainability.has_local_explanations %}
+        <h3>Local Explanations</h3>
+        <p>Local explanations are available for this model.</p>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Bias Analysis</h2>
+        
+        {% if report_data.bias_analysis.bias_report %}
+        <h3>Protected Attributes</h3>
+        <ul>
+            {% for attr in report_data.bias_analysis.protected_attributes %}
+            <li>{{ attr }} (Privileged: {{ report_data.bias_analysis.privileged_groups[attr] }})</li>
+            {% endfor %}
+        </ul>
+        
+        {% if report_data.bias_analysis.plots %}
+        <h3>Bias Metrics</h3>
+        
+        {% if "disparate_impact" in report_data.bias_analysis.plots %}
+        <h4>Disparate Impact</h4>
+        <div class="plot-container">
+            <div id="disparate-impact-plot"></div>
+        </div>
+        <script>
+            var disparateImpactPlot = {{ report_data.bias_analysis.plots.disparate_impact | safe }};
+            document.getElementById('disparate-impact-plot').innerHTML = disparateImpactPlot;
+        </script>
+        {% endif %}
+        
+        {% if "demographic_parity" in report_data.bias_analysis.plots %}
+        <h4>Demographic Parity</h4>
+        <div class="plot-container">
+            <div id="demographic-parity-plot"></div>
+        </div>
+        <script>
+            var demographicParityPlot = {{ report_data.bias_analysis.plots.demographic_parity | safe }};
+            document.getElementById('demographic-parity-plot').innerHTML = demographicParityPlot;
+        </script>
+        {% endif %}
+        
+        {% if "equal_opportunity" in report_data.bias_analysis.plots %}
+        <h4>Equal Opportunity</h4>
+        <div class="plot-container">
+            <div id="equal-opportunity-plot"></div>
+        </div>
+        <script>
+            var equalOpportunityPlot = {{ report_data.bias_analysis.plots.equal_opportunity | safe }};
+            document.getElementById('equal-opportunity-plot').innerHTML = equalOpportunityPlot;
+        </script>
+        {% endif %}
+        
+        {% if "feature_correlations" in report_data.bias_analysis.plots %}
+        <h4>Feature Correlations</h4>
+        <div class="plot-container">
+            <div id="feature-correlations-plot"></div>
+        </div>
+        <script>
+            var featureCorrelationsPlot = {{ report_data.bias_analysis.plots.feature_correlations | safe }};
+            document.getElementById('feature-correlations-plot').innerHTML = featureCorrelationsPlot;
+        </script>
+        {% endif %}
+        
+        <h3>Bias Summary</h3>
+        <div class="bias-metrics">
+            {% if report_data.bias_analysis.bias_report.disparate_impact %}
+            {% for attr, ratio in report_data.bias_analysis.bias_report.disparate_impact.items() %}
+            <div class="bias-metric">
+                <h4>Disparate Impact ({{ attr }})</h4>
+                <p class="value">{{ "%.4f" | format(ratio) }}</p>
+                <p class="interpretation">
+                    {% if ratio >= 0.8 and ratio <= 1.2 %}
+                    Fair (within acceptable range)
+                    {% else %}
+                    Potential bias detected
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+            {% if report_data.bias_analysis.bias_report.demographic_parity %}
+            {% for attr, diff in report_data.bias_analysis.bias_report.demographic_parity.items() %}
+            <div class="bias-metric">
+                <h4>Demographic Parity ({{ attr }})</h4>
+                <p class="value">{{ "%.4f" | format(diff) }}</p>
+                <p class="interpretation">
+                    {% if diff <= 0.05 %}
+                    Fair (small difference)
+                    {% else %}
+                    Potential bias detected
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        {% else %}
+        <p>No bias metrics plots available.</p>
+        {% endif %}
+        {% else %}
+        <p>No bias analysis data available.</p>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Model Performance</h2>
+        
+        {% if report_data.performance_metrics.metrics %}
+        <h3>Performance Metrics</h3>
+        <div class="performance-metrics">
+            {% for metric, value in report_data.performance_metrics.metrics.items() %}
+            <div class="performance-metric">
+                <h4>{{ metric }}</h4>
+                <p class="value">{{ "%.4f" | format(value) }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if report_data.performance_metrics.has_confusion_matrix %}
+        <h3>Confusion Matrix</h3>
+        <div class="plot-container">
+            <div id="confusion-matrix-plot"></div>
+        </div>
+        <script>
+            var confusionMatrixPlot = {{ report_data.performance_metrics.confusion_matrix_plot | safe }};
+            document.getElementById('confusion-matrix-plot').innerHTML = confusionMatrixPlot;
+        </script>
+        {% endif %}
+        
+        {% if report_data.performance_metrics.has_roc_curve %}
+        <h3>ROC Curve</h3>
+        <div class="plot-container">
+            <div id="roc-curve-plot"></div>
+        </div>
+        <script>
+            var rocCurvePlot = {{ report_data.performance_metrics.roc_curve_plot | safe }};
+            document.getElementById('roc-curve-plot').innerHTML = rocCurvePlot;
+        </script>
+        {% endif %}
+        
+        {% if report_data.performance_metrics.has_precision_recall_curve %}
+        <h3>Precision-Recall Curve</h3>
+        <div class="plot-container">
+            <div id="precision-recall-plot"></div>
+        </div>
+        <script>
+            var precisionRecallPlot = {{ report_data.performance_metrics.precision_recall_plot | safe }};
+            document.getElementById('precision-recall-plot').innerHTML = precisionRecallPlot;
+        </script>
+        {% endif %}
+        {% else %}
+        <p>No performance metrics available.</p>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Regulatory Compliance</h2>
+        
+        {% if report_data.regulatory_compliance.compliance_data %}
+        <h3>Compliance Summary</h3>
+        <div class="plot-container">
+            <div id="compliance-summary-plot"></div>
+        </div>
+        <script>
+            var complianceSummaryPlot = {{ report_data.regulatory_compliance.compliance_summary_plot | safe }};
+            document.getElementById('compliance-summary-plot').innerHTML = complianceSummaryPlot;
+        </script>
+        
+        <h3>Regulations</h3>
+        <ul>
+            {% for regulation in report_data.regulatory_compliance.regulations %}
+            <li>{{ regulation }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No regulatory compliance data available.</p>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Recommendations</h2>
+        
+        {% if report_data.recommendations %}
+        {% for recommendation in report_data.recommendations %}
+        <div class="recommendation">
+            <h4>{{ recommendation.title }}</h4>
+            <p>{{ recommendation.description }}</p>
+            {% if recommendation.priority %}
+            <p><strong>Priority:</strong> {{ recommendation.priority }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No recommendations available.</p>
+        {% endif %}
+    </div>
+    
+    <div class="footer">
+        <p>Generated by AI Model Governance Toolkit for FinTech</p>
+        <p>© {{ report_data.model_info.generation_date.split('-')[0] }} All Rights Reserved</p>
+    </div>
+</body>
+</html> 
